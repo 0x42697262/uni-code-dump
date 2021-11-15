@@ -1,0 +1,425 @@
+// Requirement 2. Implement queue and Dequeue in Singly linked lists using C++. 
+// Deadline: November 15
+
+/*
+   A simple Queue and Dequeue for Fast Modular Exponentiation using Singly Link Lists
+   The program takes multiple inputs of numbers which are added one by one to the list.
+
+   TO DO:
+        > Create a function for calculating FME
+        > Create a class for the node that will store the data
+        > Create a class for Queue that is a SLL
+        > Create a class for Dequeue that is a SLL
+*/
+
+#include <iostream>
+#include <string>
+
+
+/*
+    Code algorithm derived from https://www.youtube.com/watch?v=3Bh7ztqBpmw
+*/
+int fme(long long base, unsigned int power, int modulo){
+    int r = 1;
+
+    while(power > 0){
+        if( power & 1 )
+            r = (r*base) % modulo;
+        base = (base*base) % modulo;
+        power = power >> 1;
+    }
+    
+    return r;
+}
+
+/*
+    This class holds the data for each nodes in the list. It requires the base, power, and modulo.
+    The mathematical expression of this would be: base^power % module 
+                                       or simply: b^p % m
+
+    I initialize the values with -1 because the result of the modular expressions 
+    can never go below 1.
+*/
+
+class QDataNode{
+public:
+    long long base;
+    unsigned int power;
+    int modulo;
+    int result;
+    QDataNode *next;
+
+    QDataNode(){
+        this->base = -1;
+        this->power = -1;
+        this->modulo = -1;
+        this->next = NULL;
+    }
+
+    QDataNode(long long base, unsigned int power, int modulo){
+        this->base = base;
+        this->power = power;
+        this->modulo = modulo;
+        this->next = NULL;
+    }
+};
+
+/*
+    In this Queue, we initialize the front and the back.
+    This class contains isEmpty(), Enqueue(), Dequeue(), printQueue(), and Process(),
+    ProcessAll(), and count()functions.
+
+    isEmpty():
+        - is a boolean type function
+        - is used for checking if the list is empty
+        - returns TRUE if front and rear are empty otherwise FALSE
+    Enqueue():
+        - is a void function
+        - a function for entering new data node into the rear of the list
+        - takes 3 parameters: long long base, unsigned int power, int modulo
+        - if list is empty, set the fron and rear as the new data node
+            but if it's not empty, we set the rear and the node link to the new data
+    Dequeue():
+        - is a void function
+        - a function for removing the front data node of the list
+    printQueue():
+        - a void function that prints the queue list
+    Process():
+        - an void function that prints the calculated expression
+        - start calculating the modular expression and dequeues the node
+    ProcessAll():
+        - the same function as above but iterates the entire nodes
+    count():
+        - an int function that returns the total nodes in the queue
+*/
+class Queue{
+public:
+    QDataNode *front;
+    QDataNode *rear;
+
+    Queue(){
+        this->front = NULL;
+        this->rear = NULL;
+    }
+
+    bool isEmpty(){
+        if(this->front == NULL && this->rear == NULL)
+            return true;
+        else
+            return false;
+    }
+
+    void Enqueue(long long base, unsigned int power, int modulo){
+        QDataNode *NewNode = new QDataNode(base, power, modulo);
+
+        if(this->isEmpty()){
+            this->front = NewNode;
+            this->rear = NewNode;
+            return;
+        }
+        this->rear->next = NewNode;
+        this->rear= NewNode;
+
+    }
+
+    void Dequeue(){
+        if(this->isEmpty())
+            return;
+
+        if(this->front == this->rear){
+            free(this->front);
+            this->front = NULL;
+            this->rear = NULL;
+        }
+        else{
+            QDataNode *DelNode = this->front;
+            this->front = this->front->next;
+            free(DelNode);
+        }        
+
+    }
+
+    void Process(){
+        if(this->isEmpty())
+            return;
+        
+        std::cout << this->front->base << "^" << this->front->power << " % " << this->front->modulo <<
+            " = " << 
+            fme(this->front->base, this->front->power, this->front->modulo) << std::endl;
+        this->Dequeue();
+    }
+
+    void ProcessAll(){
+        if(this->isEmpty())
+            return;
+
+        QDataNode *selectedNode = this->front;
+
+        while(selectedNode != NULL){
+            std::cout << selectedNode->base << "^" << selectedNode->power << " % " << selectedNode->modulo <<
+            " = " <<
+            fme(selectedNode->base, selectedNode->power, selectedNode->modulo) << std::endl;
+            this->Dequeue();
+            selectedNode = selectedNode->next;
+        }
+    }
+
+    int count(){
+        if(this->isEmpty())
+            return 0;
+        
+        int c = 0;
+        
+        QDataNode *selectedNode = this->front;
+
+        while(selectedNode != NULL){
+            c++;
+            selectedNode = selectedNode->next;
+        }
+
+        return c;
+    }
+
+    void printQueue(){
+        if(this->isEmpty()){
+            std::cout << "Queue is Empty." << std::endl;
+            return;
+        }
+        
+        QDataNode *selectedNode = this->front;
+        while(selectedNode != NULL){
+            std::cout << "Node: " << selectedNode << std::endl;
+            std::cout << "Next Node: " << selectedNode->next << std::endl;
+            std::cout << "Base: " << selectedNode->base << std::endl;
+            std::cout << "Power: " << selectedNode->power << std::endl;
+            std::cout << "Modulo: " << selectedNode->modulo << std::endl << std::endl;
+            selectedNode = selectedNode->next;
+        }
+    }
+};
+
+/*
+    DEQueue class is exactly the same as Queue class but with more functions that supports
+    adding and removing nodes at both ends of the nodes
+
+    Has new functions: EnqueueRear(), DequeueRear(), and ProcessRear()
+
+    EnqueueRear():
+        - the same function as Enqueue from the Queue class but the small change is for
+            adding the new data node to the left side of the node
+    DequeueRear():
+        - although it is the same as Dequeue() from the Queue class, this one has few minor
+            changes in the code
+        - this specifically removes the rear (right side) of the node
+    ProcessRear():
+        - the same function as Process() Queue class but this starts processing the rear node
+*/
+
+class DEQueue: public Queue{
+public:
+    QDataNode *oldFront;
+
+    DEQueue(){
+        this->oldFront = NULL;
+    }
+
+    void EnqueueRear(long long base, unsigned int power, int modulo){
+        QDataNode *NewNode = new QDataNode(base, power, modulo);
+
+        if(this->isEmpty()){
+            this->front = NewNode;
+            this->rear = NewNode;
+            return;
+        }
+        NewNode->next = this->front;
+        this->oldFront = this->front;
+        this->front= NewNode;
+
+    }
+
+    void DequeueRear(){
+        if(this->isEmpty())
+            return;
+
+        if(this->rear == this->front){
+            free(this->rear);
+            this->front = NULL;
+            this->rear = NULL;
+            return;
+        }
+        
+        QDataNode *selectedNode = this->front;
+
+        while(selectedNode->next != this->rear)
+            selectedNode = selectedNode->next;
+
+        selectedNode->next = NULL;
+        free(this->rear);
+        this->rear = selectedNode;
+    }
+
+    void ProcessRear(){
+        if(this->isEmpty())
+            return;
+        
+        std::cout << this->rear->base << "^" << this->rear->power << " % " << this->rear->modulo <<
+            " = " << 
+            fme(this->rear->base, this->rear->power, this->rear->modulo) << std::endl;
+        this->DequeueRear();
+    }
+};
+
+
+/*
+    Anything related to using the Queue and Dequeue goes down here. Like menus and user inputs.
+*/
+void QTypeOne(){
+    Queue Q;
+    int choice = -1;
+
+    long long base;
+    unsigned int power;
+    int modulo;
+
+    system("cls");
+    do{
+        std::cout << "(1) Input Modular Expression (Enqueue)" << std::endl;
+        std::cout << "(2) Remove Modular Expression (Dequeue)" << std::endl;
+        std::cout << "(3) Print Modular Expression" << std::endl;
+        std::cout << "(4) Process Modular Expression" << std::endl;
+        std::cout << "(5) Process All Modular Expression" << std::endl;
+        std::cout << "(0) Quit" << std::endl;
+
+        std::cout << ">> ";
+        std::cin >> choice;
+        
+        switch(choice){
+            case 0:
+                exit(0);
+                break;
+
+            case 1:
+                std::cout << "Input BASE POWER MODULO: ";
+                std::cin >> base >> power >> modulo;
+                Q.Enqueue(base, power, modulo);
+                break;
+            
+            case 2:
+                Q.Dequeue();
+                std::cout << "Dequeue'd the front node." << std::endl;
+                break;
+
+            case 3:
+                Q.printQueue();
+                break;
+            
+            case 4:
+                Q.Process();
+                break;
+
+            case 5:
+                Q.ProcessAll();
+                break;
+
+            default:
+                break;
+        }
+    }while(choice != 0);
+}
+
+void QTypeTwo(){
+    DEQueue Q;
+    int choice = -1;
+
+    long long base;
+    unsigned int power;
+    int modulo;
+
+    system("cls");
+    do{
+        std::cout << "(1) Input Modular Expression (Enqueue)" << std::endl;
+        std::cout << "(2) Remove Modular Expression (Dequeue)" << std::endl;
+        std::cout << "(3) Print Modular Expression" << std::endl;
+        std::cout << "(4) Process Modular Expression" << std::endl;
+        std::cout << "(5) Process All Modular Expression" << std::endl;
+        std::cout << "(6) Input Modular Expression (Enqueue Rear)" << std::endl;
+        std::cout << "(7) Remove Modular Expression (Dequeue Rear)" << std::endl;
+        std::cout << "(8) Process Modular Expression (Rear)" << std::endl;
+        std::cout << "(0) Quit" << std::endl;
+
+        std::cout << ">> ";
+        std::cin >> choice;
+
+        switch(choice){
+            case 0:
+                exit(0);
+                break;
+            
+            case 1:
+                std::cout << "Input BASE POWER MODULO: ";
+                std::cin >> base >> power >> modulo;
+                Q.Enqueue(base, power, modulo);
+                break;
+
+
+            case 2:
+                Q.Dequeue();
+                std::cout << "Dequeue'd the front node." << std::endl;
+                break;
+
+            case 3:
+                Q.printQueue();
+                break;
+
+            case 4:
+                Q.Process();
+                break;
+            
+            case 5:
+                Q.ProcessAll();
+                break;
+            
+            case 6:
+                std::cout << "Input BASE POWER MODULO: ";
+                std::cin >> base >> power >> modulo;
+                Q.EnqueueRear(base, power, modulo);
+                break;
+
+            case 7:
+                Q.DequeueRear();
+                std::cout << "Dequeue'd the rear node." << std::endl;
+                break;
+
+            case 8:
+                Q.ProcessRear();
+                break;
+
+
+            default:
+                break;
+        }
+
+    }while(choice != 0);
+}
+
+int main(){
+
+    int choice;
+
+    std::cout << "(1) Use Queue Singly Linked List" << std::endl;
+    std::cout << "(2) Use DEQueue Singly Linked List" << std::endl;
+
+    std::cout << ">>";
+    std::cin >> choice;
+
+    if(choice == 1){
+        QTypeOne();
+        
+    }
+    if(choice == 2){
+        QTypeTwo();
+        
+    }
+
+    return 0;
+}
